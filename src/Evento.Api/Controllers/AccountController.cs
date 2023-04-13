@@ -19,13 +19,13 @@ namespace Evento.Api.Controllers
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> Get()
-            => Json(await _userService.GetAccountAsync(UserId));
+            => Json(await _userService.GetAccountAsync(UserId.Value));
 
         [HttpGet("tickets")]
         [Authorize]
         public async Task<IActionResult> GetTickets()
         {
-            var tickets = await _ticketService.GetForUserAsync(UserId);
+            var tickets = await _ticketService.GetForUserAsync(UserId.Value);
 
             return Json(tickets);
         }
@@ -38,14 +38,50 @@ namespace Evento.Api.Controllers
                 return NoContent();
             }
 
-            command.UserId = Guid.NewGuid();
-            await _userService.RegisterAsync(command.UserId, command.Username, command.Password, command.Email, command.Role);
+            await _userService.RegisterAsync(command.Username, command.Password, command.Email, command.Role);
 
             return Created($"/account", null);
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginUser command)
-            => Json(await _userService.LoginAsync(command.Email, command.Password));
+        {
+            try
+            {
+                return Json(await _userService.LoginAsync(command.Email, command.Password));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("forgot")]
+        public async Task<IActionResult> Forgot([FromBody] ForgotUser command)
+        {
+            try
+            {
+                await _userService.ForgotPassword(command.Email);
+                return Accepted();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("reset_password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPassword command)
+        {
+            try
+            {
+                await _userService.ResetPassword(command.Token, command.Password);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

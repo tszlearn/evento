@@ -4,6 +4,7 @@ using Evento.Core.Repositories;
 using Evento.Infrastructure.DTO;
 using Evento.Infrastructure.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.Identity;
 using Moq;
 
 namespace Evento.Tests.Services
@@ -14,13 +15,15 @@ namespace Evento.Tests.Services
         public async Task register_async_should_invoke_add_async_on_user_repository()
         {
             //Arrange
+            var pepper = "pepper";
             var userRepositoryMock = new Mock<IUserRepository>();
             var jwtHandlerMock = new Mock<IJwtHandler>();
             var mapperMock = new Mock<IMapper>();
-            var userService = new UserService(userRepositoryMock.Object, jwtHandlerMock.Object, mapperMock.Object);
+            var userService = new UserService(userRepositoryMock.Object, jwtHandlerMock.Object, mapperMock.Object, pepper);
+
 
             //Act
-            await userService.RegisterAsync(Guid.NewGuid(), "user_test", "secure_test", "test@email.com");
+            await userService.RegisterAsync("user_test", "secure_test", "test@email.com");
 
             //Assert
             userRepositoryMock.Verify(x=>x.AddAsync(It.IsAny<User>()), Times.Once());
@@ -31,29 +34,32 @@ namespace Evento.Tests.Services
         public async Task when_invoking_get_account_async_it_should_invoke_get_async_on_user_repository()
         {
             //Arrange
-            var user = new User(Guid.NewGuid(), "user", "test_name", "test@email.com", "secret");
+            var pepper = "pepper";
+            var salt = PasswordHasher.GenerateSalt();
+            var passwordHash = PasswordHasher.ComputeHash("secret", salt, pepper, 3);
+            var user = new User( "user", "test_name", "test@email.com", salt, passwordHash);
             var returnAccountDto = new AccountDto()
             {
-                Id = user.Id,
+                Id = user.ID,
                 Email = user.Email,
                 Name = user.Name,
-                Role = user.Role
+                Role = user.Role.ToString(),
             };
 
             var userRepositoryMock = new Mock<IUserRepository>();
             var jwtHandlerMock = new Mock<IJwtHandler>();
             var mapperMock = new Mock<IMapper>();
-            var userService = new UserService(userRepositoryMock.Object, jwtHandlerMock.Object, mapperMock.Object);
+            var userService = new UserService(userRepositoryMock.Object, jwtHandlerMock.Object, mapperMock.Object, pepper);
 
             mapperMock.Setup(x=>x.Map<AccountDto>(user)).Returns(returnAccountDto);
-            userRepositoryMock.Setup(x=>x.GetAsync(user.Id)).ReturnsAsync(user);
+            userRepositoryMock.Setup(x=>x.GetAsync(user.ID)).ReturnsAsync(user);
 
 
             //Act
-            var existingAccountDto = await userService.GetAccountAsync(user.Id);
+            var existingAccountDto = await userService.GetAccountAsync(user.ID);
 
             //Assert
-            userRepositoryMock.Verify(x => x.GetAsync(user.Id), Times.Once());
+            userRepositoryMock.Verify(x => x.GetAsync(user.ID), Times.Once());
             existingAccountDto.Should().NotBeNull();
             existingAccountDto.Email.Should().Be(user.Email);
         }

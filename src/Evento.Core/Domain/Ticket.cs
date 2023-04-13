@@ -1,46 +1,32 @@
-﻿namespace Evento.Core.Domain
-{
-    public class Ticket : Entity
-    {
-        public Guid EventId { get; protected set; }
-        public int Seating { get; protected set; }
-        public decimal Price { get; protected set; }
-        public Guid? UserId { get; protected set; }
-        public string Username { get; protected set; }
-        public DateTime? PurchaseAt { get; protected set; }
-        public bool Purchased => UserId.HasValue;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
-        protected Ticket() { }
+namespace Evento.Core.Domain
+{
+    [Table("Ticket")]
+    public class Ticket
+    {
+        // Properties
+        public int ID { get; set; }
+        public int EventID { get; set; }
+        public int Seating { get; set; }
+        public decimal Price { get; set; }
+        public int? UserID { get; set; }
+        public DateTime? PurchaseAt { get; set; }
+
+
+        // Navigation Properties
+        public virtual Event Event { get; set; }
+        public virtual User User { get; set; }
+
+
+
+        public Ticket() { }
 
         public Ticket(Event @event, int seating, decimal price)
         {
-            EventId = @event.Id;
+            EventID = @event.ID;
             Seating = seating;
             Price = price;
-        }
-
-        public void Purchase(User user)
-        {
-            if (Purchased)
-            {
-                throw new Exception($"Ticket was already purchesed by user: {Username} at {PurchaseAt}.");
-            }
-
-            UserId = user.Id;
-            Username= user.Name;
-            PurchaseAt = DateTime.UtcNow;
-        }
-
-        public void Cancel()
-        {
-            if (!Purchased)
-            {
-                throw new Exception("Ticket was not purchesed and can not be canceled.");
-            }
-
-            UserId = null;
-            Username = null;
-            PurchaseAt = null;
         }
     }
 }

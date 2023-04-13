@@ -1,5 +1,6 @@
 ﻿
 
+using Evento.Core.Domain;
 using Evento.Infrastructure.DTO;
 using Evento.Infrastructure.Extensions;
 using Evento.Infrastructure.Settings;
@@ -20,14 +21,14 @@ namespace Evento.Infrastructure.Services
             _jwtSettings = jwtSettings.Value;
         }
 
-        public JwtDto CreateToken(Guid userId, string role)
+        public JwtDto CreateToken(int userId, Role role)
         {
             var date = DateTime.UtcNow;
             var claims = new Claim[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.UniqueName, userId.ToString()),
-                new Claim(ClaimTypes.Role, role),
+                new Claim(ClaimTypes.Role, role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat, date.ToTimestamp().ToString())
             };

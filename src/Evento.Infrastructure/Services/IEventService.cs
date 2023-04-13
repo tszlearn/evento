@@ -10,12 +10,12 @@ namespace Evento.Infrastructure.Services
 {
     public interface IEventService
     {
-        Task<EventDetailsDto> GetEventAsync(Guid id);
+        Task<EventDetailsDto> GetEventAsync(int id);
         Task<EventDetailsDto> GetEventAsync(string name);
         Task<IEnumerable<EventDto>> BrowseAsync(string name="");
-        Task CreateAsync(Guid id, string name, string description, DateTime startDate, DateTime endDate);
-        Task AddTicketAsync(Guid eventId, int amount, decimal price);
-        Task UpdateAsync(Guid id, string name, string description);
-        Task DeleteAsync(Guid id);
+        Task<EventDto> CreateAsync(string name, string description, DateTime startDate, DateTime endDate);
+        Task AddTicketAsync(int eventId, int amount, decimal price);
+        Task UpdateAsync(int id, string name, string description);
+        Task DeleteAsync(int id);
     }
 }

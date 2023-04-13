@@ -10,10 +10,10 @@ namespace Evento.Infrastructure.Services
 {
     public interface ITicketService
     {
-        Task<TicketDto> GetAsync(Guid userId, Guid eventId, Guid ticketId);
-        Task<IEnumerable<TicketDetailsDto>> GetForUserAsync(Guid userId);
-        Task PurchaseAsync(Guid eventId, Guid userId, int amount);
-        Task CancelPurchesedAsync(Guid eventId, Guid userId, int amount)
+        Task<TicketDto> GetAsync(int userId, int eventId, int ticketId);
+        Task<IEnumerable<TicketDetailsDto>> GetForUserAsync(int userId);
+        Task PurchaseAsync(int eventId, int userId, int amount);
+        Task CancelPurchesedAsync(int eventId, int userId, int amount)
 ;
     }
 }

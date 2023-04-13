@@ -1,33 +1,56 @@
 ﻿using Evento.Core.Domain;
 using Evento.Core.Repositories;
+using Evento.Infrastructure.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Evento.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private static readonly ISet<User> _users = new HashSet<User>();
+        private readonly EventoContext _context;
 
-        public async Task<User> GetAsync(Guid id)
-            => await Task.FromResult(_users.SingleOrDefault(x=>x.Id==id));
+        public UserRepository(EventoContext context) 
+        {
+            _context = context;
+        }
 
-        public async Task<User> GetAsync(string email)
-            => await Task.FromResult(_users.SingleOrDefault(x => string.Equals(x.Email.ToLowerInvariant(), email.ToLowerInvariant())));
+
+        public async Task<User?> GetAsync(int id)
+            => await _context.Users.FirstOrDefaultAsync(x => x.ID == id);
+
+        public async Task<User?> GetAsync(string email)
+            => await _context.Users.FirstOrDefaultAsync(x => string.Equals(x.Email, email.ToLowerInvariant()));
+
+        public async Task<User?> GetByTokenAsync(string token)
+            => await _context.Users.FirstOrDefaultAsync(x => string.Equals(x.ResetPasswordToken, token));
+
+        public async Task<ICollection<User>> GetResetPasswordUsers()
+        {
+            return await _context.Users.Where(x=> !string.IsNullOrWhiteSpace(x.ResetPasswordToken)).ToListAsync();
+        }
 
         public async Task AddAsync(User user)
         {
-            _users.Add(user);
-            await Task.CompletedTask;
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(User user)
         {
-            _users.Remove(user);
-            await Task.CompletedTask;
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(User user)
         {
-            await Task.CompletedTask;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateRangeAsync(IEnumerable<User> updateUsers)
+        {
+            _context.Users.UpdateRange(updateUsers);
+            await _context.SaveChangesAsync();
         }
     }
 }

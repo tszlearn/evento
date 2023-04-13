@@ -17,9 +17,9 @@ namespace Evento.Api.Controllers
 
         //Get
         [HttpGet("{ticketId}")]
-        public async Task<IActionResult> GetTicket(Guid eventId, Guid ticketId)
+        public async Task<IActionResult> GetTicket(int eventId, int ticketId)
         {
-            var ticket = await _ticketService.GetAsync(UserId, eventId, ticketId);
+            var ticket = await _ticketService.GetAsync(UserId.Value, eventId, ticketId);
 
             if(ticket == null)
             {
@@ -31,18 +31,18 @@ namespace Evento.Api.Controllers
 
         //Post
         [HttpPost("purchase/{amount}")]
-        public async Task<IActionResult> PurchesTickets(Guid eventId, int amount)
+        public async Task<IActionResult> PurchesTickets(int eventId, int amount)
         {
-            await _ticketService.PurchaseAsync(eventId, UserId, amount);
+            await _ticketService.PurchaseAsync(eventId, UserId.Value, amount);
 
             return NoContent();
         }
 
         //Delete
         [HttpDelete("cancel/{amount}")]
-        public async Task<IActionResult> CancelPurchesedTickets(Guid eventId, int amount)
+        public async Task<IActionResult> CancelPurchesedTickets(int eventId, int amount)
         {
-            await _ticketService.CancelPurchesedAsync(eventId, UserId, amount);
+            await _ticketService.CancelPurchesedAsync(eventId, UserId.Value, amount);
 
             return NoContent();
         }

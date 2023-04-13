@@ -1,14 +1,9 @@
 ﻿using AutoMapper;
+using Castle.Core.Resource;
 using Evento.Core.Domain;
 using Evento.Core.Repositories;
 using Evento.Infrastructure.DTO;
 using Evento.Infrastructure.Extensions;
-using Microsoft.AspNetCore.Http.Features;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Evento.Infrastructure.Services
 {
@@ -17,15 +12,18 @@ namespace Evento.Infrastructure.Services
         private readonly IUserRepository _userRepository;
         private readonly IJwtHandler _jwtHandler;
         private readonly IMapper _mapper;
+        private readonly string _passwordHashPepper;
+        private readonly int _iteration = 3;
 
-        public UserService(IUserRepository userRepository, IJwtHandler jwtHandler, IMapper mapper)
+        public UserService(IUserRepository userRepository, IJwtHandler jwtHandler, IMapper mapper, string passwordHashPepper)
         {
             _userRepository = userRepository;
             _jwtHandler = jwtHandler;
             _mapper = mapper;
+            _passwordHashPepper = passwordHashPepper;
         }
 
-        public async Task<AccountDto> GetAccountAsync(Guid userId)
+        public async Task<AccountDto> GetAccountAsync(int userId)
         {
             var user = await _userRepository.GetOrFailAsync(userId);
 
@@ -40,12 +38,14 @@ namespace Evento.Infrastructure.Services
                 throw new Exception($"Invalid credentials.");
             }
 
-            if(user.Password != password)
+            var passwordHash = PasswordHasher.ComputeHash(password, user.PasswordSalt, _passwordHashPepper, _iteration);
+
+            if (user.Password != passwordHash)
             {
                 throw new Exception($"Invalid credentials.");
             }
 
-            var jwt = _jwtHandler.CreateToken(user.Id, user.Role);
+            var jwt = _jwtHandler.CreateToken(user.ID, user.Role);
 
             return new TokenDto
             {
@@ -55,7 +55,7 @@ namespace Evento.Infrastructure.Services
             };
         }
 
-        public async Task RegisterAsync(Guid userId, string username, string password, string email, string role = "user")
+        public async Task RegisterAsync(string username, string password, string email, string role = "user")
         {
             var user = await _userRepository.GetAsync(email);
 
@@ -64,9 +64,59 @@ namespace Evento.Infrastructure.Services
                 throw new Exception($"User with email '{email}' already exists!");
             }
 
-            user = new User(userId, role, username, email, password);
+
+
+            user = new User(role, username, email);
+            user.SetPasswordHash(password, _passwordHashPepper, _iteration);
 
             await _userRepository.AddAsync(user);
+        }
+
+        public async Task ForgotPassword(string email)
+        {
+            var user = await _userRepository.GetAsync(email);
+
+            if (user != null)
+            {
+                var token = ResetPasswordHandler.CreateToken(48);
+
+                user.SetResetPasswordToken(token);
+                await _userRepository.UpdateAsync(user);
+
+                //TODO: wysyłanie emaila z linkiem
+            }
+        }
+
+        public async Task ResetPassword(string token, string password)
+        {
+            var user = await _userRepository.GetByTokenAsync(token);
+
+            if(user != null)
+            {
+                user.SetPasswordHash(password, _passwordHashPepper, _iteration);
+                await _userRepository.UpdateAsync(user);
+            }
+        }
+
+        public async Task PasswordTokenValidate()
+        {
+            ICollection<User> users = await _userRepository.GetResetPasswordUsers();
+            List<User> updateUsers = new List<User>();
+
+            foreach (User user in users)
+            {
+                if (!string.IsNullOrWhiteSpace(user.ResetPasswordToken) &&
+                    user.ValidatePasswordToken())
+                {
+                    user.ClearResetPassword();
+                    updateUsers.Add(user);
+                }
+            }
+
+            if (updateUsers.Count > 0)
+            {
+                await _userRepository.UpdateRangeAsync(updateUsers);
+            }
         }
     }
 }

@@ -9,10 +9,13 @@ namespace Evento.Core.Repositories
 {
     public interface IUserRepository
     {
-        Task<User> GetAsync(Guid id);
-        Task<User> GetAsync(string email);
+        Task<User?> GetAsync(int id);
+        Task<User?> GetAsync(string email);
+        Task<User?> GetByTokenAsync(string token);
         Task AddAsync(User user);
         Task UpdateAsync(User user);
         Task DeleteAsync(User user);
+        Task<ICollection<User>> GetResetPasswordUsers();
+        Task UpdateRangeAsync(IEnumerable<User> updateUsers);
     }
 }

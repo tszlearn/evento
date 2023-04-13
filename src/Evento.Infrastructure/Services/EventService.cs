@@ -3,6 +3,7 @@ using Evento.Core.Domain;
 using Evento.Core.Repositories;
 using Evento.Infrastructure.DTO;
 using Evento.Infrastructure.Extensions;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,15 +16,17 @@ namespace Evento.Infrastructure.Services
     public class EventService : IEventService
     {
         private readonly IEventRepository _eventRepository;
+        private readonly ITicketRepository _ticketRepository;
         private readonly IMapper _mapper;
 
-        public EventService(IEventRepository eventRepository, IMapper mapper)
+        public EventService(IEventRepository eventRepository, ITicketRepository ticketRepository, IMapper mapper)
         {
             _eventRepository = eventRepository;
+            _ticketRepository = ticketRepository;
             _mapper = mapper;
         }
 
-        public async Task<EventDetailsDto> GetEventAsync(Guid id)
+        public async Task<EventDetailsDto> GetEventAsync(int id)
         {
             var @event = await _eventRepository.GetAsync(id);
 
@@ -34,27 +37,34 @@ namespace Evento.Infrastructure.Services
         {
             var @event = await _eventRepository.GetAsync(name);
 
+            
+
             return _mapper.Map<EventDetailsDto>(@event);
         }
 
         public async Task<IEnumerable<EventDto>> BrowseAsync(string name = "")
         {
-            var events = await _eventRepository.BroseAsync(name);
+            var events = await _eventRepository.BrowseAsync(name);
 
             return _mapper.Map<IEnumerable<EventDto>>(events);
         }
 
-        public async Task AddTicketAsync(Guid eventId, int amount, decimal price)
+        public async Task AddTicketAsync(int eventId, int amount, decimal price)
         {
-            
             var @event = await _eventRepository.GetOrFailAsync(eventId);
-            @event.AddTicket(amount, price);
-            await _eventRepository.UpdateAsync(@event);
+            var tickets = new HashSet<Ticket>();
+
+            for (int i = 0; i < amount; i++)
+            {
+                tickets.Add(new Ticket(@event, tickets.Count + 1, price));
+            }
+
+            await _ticketRepository.AddTicketsAsync(tickets);
         }
 
 
 
-        public async Task CreateAsync(Guid id, string name, string description, DateTime startDate, DateTime endDate)
+        public async Task<EventDto> CreateAsync(string name, string description, DateTime startDate, DateTime endDate)
         {
             var @event = await _eventRepository.GetAsync(name);
 
@@ -63,18 +73,20 @@ namespace Evento.Infrastructure.Services
                 throw new Exception($"Event name: '{name}' already exists!");
             }
 
-            @event = new Event(id, name, description, startDate, endDate);
+            @event = new Event(name, description, startDate, endDate);
 
-            await _eventRepository.AddAsync(@event);
+            var result = await _eventRepository.AddAsync(@event);
+
+            return _mapper.Map<EventDto>(result);
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(int id)
         {
             var @event = await _eventRepository.GetOrFailAsync(id);
             await _eventRepository.DeleteAsync(@event);
         }
 
-        public async Task UpdateAsync(Guid id, string name, string description)
+        public async Task UpdateAsync(int id, string name, string description)
         {
             var @event = await _eventRepository.GetAsync(name);
 
