@@ -2,7 +2,8 @@
 
 namespace Evento.Api.Controllers
 {
-    [Route("[controller]")]
+    [Route("api/[controller]")]
+    [ApiController]
     public class ApiControllerBase: Controller
     {
         protected int? UserId => User?.Identity?.IsAuthenticated == true ? 

@@ -3,23 +3,20 @@ using Evento.Infrastructure.DTO;
 using Evento.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics.Tracing;
 
 namespace Evento.Api.Controllers
 {
     public class EventsController: ApiControllerBase
     {
         private readonly IEventService _eventService;
-        private readonly ITicketService _ticketService;
 
-        public EventsController(IEventService eventService, ITicketService ticketService)
+        public EventsController(IEventService eventService)
         {
             _eventService = eventService;
-            _ticketService = ticketService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get(string name)
+        public async Task<IActionResult> Get(string name="")
         {
             IEnumerable<EventDto> events = await _eventService.BrowseAsync(name);
 

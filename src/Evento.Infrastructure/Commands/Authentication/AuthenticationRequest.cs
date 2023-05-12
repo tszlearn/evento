@@ -1,6 +1,6 @@
-﻿namespace Evento.Infrastructure.Commands.Users
+﻿namespace Evento.Infrastructure.Commands.Authentication
 {
-    public class LoginUser
+    public class AuthenticationRequest
     {
         public string Email { get; set; }
         public string Password { get; set; }

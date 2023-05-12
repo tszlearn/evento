@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Evento.Core.Domain;
 using Evento.Core.Repositories;
+using Evento.Infrastructure.Commands.Authentication;
 using Evento.Infrastructure.DTO;
 using Evento.Infrastructure.Services;
 using FluentAssertions;
@@ -19,11 +20,16 @@ namespace Evento.Tests.Services
             var userRepositoryMock = new Mock<IUserRepository>();
             var jwtHandlerMock = new Mock<IJwtHandler>();
             var mapperMock = new Mock<IMapper>();
-            var userService = new UserService(userRepositoryMock.Object, jwtHandlerMock.Object, mapperMock.Object, pepper);
+            var authenticationService = new AuthenticationService(userRepositoryMock.Object, jwtHandlerMock.Object, pepper);
 
 
             //Act
-            await userService.RegisterAsync("user_test", "secure_test", "test@email.com");
+            await authenticationService.RegisterAsync(new RegistrationRequest()
+            {
+                UserName = "user_test", 
+                Password = "secure_test", 
+                Email = "test@email.com"
+            });
 
             //Assert
             userRepositoryMock.Verify(x=>x.AddAsync(It.IsAny<User>()), Times.Once());
@@ -49,7 +55,7 @@ namespace Evento.Tests.Services
             var userRepositoryMock = new Mock<IUserRepository>();
             var jwtHandlerMock = new Mock<IJwtHandler>();
             var mapperMock = new Mock<IMapper>();
-            var userService = new UserService(userRepositoryMock.Object, jwtHandlerMock.Object, mapperMock.Object, pepper);
+            var userService = new UserService(userRepositoryMock.Object, mapperMock.Object);
 
             mapperMock.Setup(x=>x.Map<AccountDto>(user)).Returns(returnAccountDto);
             userRepositoryMock.Setup(x=>x.GetAsync(user.ID)).ReturnsAsync(user);
